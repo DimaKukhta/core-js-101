@@ -6,6 +6,8 @@
  *                                                                                                *
  ************************************************************************************************ */
 
+// const { getArrayOfPositives } = require('./03-arrays-tasks');
+
 
 /**
  * Returns the rectagle object with width and height parameters and getArea() method
@@ -20,8 +22,14 @@
  *    console.log(r.height);      // => 20
  *    console.log(r.getArea());   // => 200
  */
-function Rectangle(/* width, height */) {
-  throw new Error('Not implemented');
+function Rectangle(width, height) {
+  return {
+    width,
+    height,
+    getArea() {
+      return this.width * this.height;
+    },
+  };
 }
 
 
@@ -35,8 +43,8 @@ function Rectangle(/* width, height */) {
  *    [1,2,3]   =>  '[1,2,3]'
  *    { width: 10, height : 20 } => '{"height":10,"width":20}'
  */
-function getJSON(/* obj */) {
-  throw new Error('Not implemented');
+function getJSON(obj) {
+  return JSON.stringify(obj);
 }
 
 
@@ -51,8 +59,8 @@ function getJSON(/* obj */) {
  *    const r = fromJSON(Circle.prototype, '{"radius":10}');
  *
  */
-function fromJSON(/* proto, json */) {
-  throw new Error('Not implemented');
+function fromJSON(proto, json) {
+  return Object.assign(Object.create(proto), JSON.parse(json));
 }
 
 
@@ -111,32 +119,77 @@ function fromJSON(/* proto, json */) {
  */
 
 const cssSelectorBuilder = {
-  element(/* value */) {
-    throw new Error('Not implemented');
+  data: {},
+
+  error(code) {
+    this.data = {};
+    if (code) throw new Error('Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element');
+    throw new Error('Element, id and pseudo-element should not occur more then one time inside the selector');
   },
 
-  id(/* value */) {
-    throw new Error('Not implemented');
+  stringify() {
+    let ret = '';
+    if (this.data.combine) ret += this.data.combine;
+    if (this.data.element) ret += this.data.element;
+    if (this.data.id) ret += `#${this.data.id}`;
+    if (this.data.attr) ret += `[${this.data.attr}]`;
+    if (this.data.class) ret += this.data.class;
+    if (this.data.pseudoClass) ret += this.data.pseudoClass;
+    if (this.data.pseudoElement) ret += `::${this.data.pseudoElement}`;
+    this.data = {};
+    return ret;
   },
 
-  class(/* value */) {
-    throw new Error('Not implemented');
+  element(value) {
+    if (this.data.element) this.error();
+    if (Object.keys(this.data).length) this.error(1);
+    const ret = Object.create(cssSelectorBuilder);
+    ret.data = {};
+    ret.data.element = value;
+    return ret;
   },
 
-  attr(/* value */) {
-    throw new Error('Not implemented');
+  id(value) {
+    if (this.data.id) this.error();
+    if (!this.data.element && Object.keys(this.data).length) this.error(1);
+    const ret = Object.create(cssSelectorBuilder);
+    ret.data = {};
+    if (this.data.element) ret.data.element = this.data.element;
+    ret.data.id = value;
+    return ret;
   },
 
-  pseudoClass(/* value */) {
-    throw new Error('Not implemented');
+  class(value) {
+    if (this.data.attr) this.error(1);
+    if (!this.data.class) this.data.class = '';
+    this.data.class += `.${value}`;
+    return this;
   },
 
-  pseudoElement(/* value */) {
-    throw new Error('Not implemented');
+  attr(value) {
+    if (this.data.pseudoClass) this.error(1);
+    this.data.attr = value;
+    return this;
   },
 
-  combine(/* selector1, combinator, selector2 */) {
-    throw new Error('Not implemented');
+  pseudoClass(value) {
+    if (this.data.pseudoElement) this.error(1);
+    if (!this.data.pseudoClass) this.data.pseudoClass = '';
+    this.data.pseudoClass += `:${value}`;
+    return this;
+  },
+
+  pseudoElement(value) {
+    if (this.data.pseudoElement) this.error(0);
+    this.data.pseudoElement = value;
+    return this;
+  },
+
+  combine(selector1, combinator, selector2) {
+    const ret = Object.create(cssSelectorBuilder);
+    ret.data = {};
+    ret.data.combine = `${selector1.stringify()} ${combinator} ${selector2.stringify()}`;
+    return ret;
   },
 };
 
